@@ -1,0 +1,21 @@
+Package: pmmhLong
+Title: Pseudo-marginal Metroplis Hastings for Efficient Multivariate Longitudinal Poisson Regression 
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Nicholas",
+           family = "Seedorff",
+           role = c("aut", "cre"),
+           email = "nickseedorff@gmail.com")
+Description: Latent gaussian processes can be used to model multivariate count data 
+    by including available structural or functional distances between observations. Traditional MCMC
+    approaches can be slow in this setting given the dimensionality of the unknown parameters and
+    may have difficulty convering due the the flatness of the posterior distribution. Here
+    we implement and efficient Pseudo-marginal Metroplis Hastings approach that uses an unbiased
+    estimates of the marginal likelihood based on laplace approximations. 
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Suggests: 
+    testthat
