@@ -1,15 +1,20 @@
 #' Get values for MH accept step
 #'
-#' @param gen_data_mat_obj object with list of relevant matrices
+#' @param data list of objects
+#' @param param_vec vector of proposals
+#' @param param_name char, name of parameter proposed
+#' @param pat_index scalar, index of patient
+#' @param patients scalar, number of patients
 #' @param nsim scalar, number of importance samples
+#' @param
 #' @return vector
 #' @export
 #' @examples
 #' get_post_estimate(data, param_vec, param_name, param_)
 
-get_post_estimate <- function(data, param_vec, param_name, pat_index,
+get_post_estim <- function(data, param_vec, param_name, pat_index,
                               patients, nsim,
-                              ll_marg_vec = NULL) {
+                              pmll_vec = NULL) {
 
   ## Parameters to build mean vector
   alpha <- param_vec[1:patients]
@@ -47,17 +52,17 @@ get_post_estimate <- function(data, param_vec, param_name, pat_index,
 
   ## If using all subjects, return full vector
   if (ll_marg[1] == "err") {
-    marg_vec <- rep(1e-6, length(data$pat_full_index))
+    pmll_vec <- rep(1e-6, length(data$pat_full_index))
     post_value <- 1e-9
-    return(list(marg_vec = marg_vec, post_value = post_value))
+    return(list(pmll_vec = pmll_vec, post_value = post_value))
   } else if (pat_index == 0) {
-    marg_vec <- ll_marg
+    pmll_vec <- ll_marg
   } else {
     ll_marg_vec[data$pat_full_index == pat_index] <- ll_marg
-    marg_vec <- ll_marg_vec
+    pmll_vec <- pmll_vec
   }
 
-  post_value <- sum(marg_vec) -
+  post_value <- sum(pmll_vec) -
     1.01 * log(sigma) - 0.01 / sigma -
     1.01 * log(phi) - 0.01 / phi -
     sum((alpha - alpha_hier) ^ 2) / 2 / 3 ^ 2 -
@@ -65,5 +70,5 @@ get_post_estimate <- function(data, param_vec, param_name, pat_index,
     alpha_hier ^ 2 / 2 / 3 ^ 2 -
     beta_hier ^ 2 / 2 / 3 ^ 2
 
-  list(marg_vec = marg_vec, post_value = post_value)
+  list(pmll_vec = pmll_vec, post_value = post_value)
 }

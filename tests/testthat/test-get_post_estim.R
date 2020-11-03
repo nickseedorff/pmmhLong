@@ -9,7 +9,7 @@ test_that("multiplication works", {
   nsim <- 25
 
   set.seed(10)
-  res <- get_post_estimate(data, param_vec, param_name, pat_index = pat_idx,
+  res <- get_post_estim(data, param_vec, param_name, pat_index = pat_idx,
                     patients, 25)
 
   ## Value was calcuated through previous testing
