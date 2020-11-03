@@ -2,7 +2,9 @@
 
 export(calc_gradient)
 export(calc_hessian)
+export(gen_data)
 export(gen_data_mat)
 export(get_pmll_estim)
+export(get_post_estimate)
 export(get_posterior_modes)
 export(single_step)

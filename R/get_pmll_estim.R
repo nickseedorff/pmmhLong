@@ -5,7 +5,7 @@
 #' @return vector
 #' @export
 #' @examples
-#' #' get_pmll_estim(data_object, nsim = 20)
+#' get_pmll_estim(data_object, nsim = 20)
 
 get_pmll_estim <- function(get_data_mat_obj, nsim = 500) {
 

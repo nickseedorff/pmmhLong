@@ -18,5 +18,5 @@ vector
 Get estimates of the marginal likelihood values
 }
 \examples{
-#' get_pmll_estim(data_object, nsim = 20)
+get_pmll_estim(data_object, nsim = 20)
 }
