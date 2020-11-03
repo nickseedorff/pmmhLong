@@ -26,13 +26,12 @@ get_post_estim(
 \item{patients}{scalar, number of patients}
 
 \item{nsim}{scalar, number of importance samples}
+
+\item{pmll_vec}{vector of previous pmll estimates}
 }
 \value{
 vector
 }
 \description{
 Get values for MH accept step
-}
-\examples{
-get_post_estimate(data, param_vec, param_name, param_)
 }
