@@ -1,27 +1,23 @@
 #' Get estimates of the marginal likelihood values
 #'
-#' @param gen_data_mat_obj object with list of relevant matrices
+#' @param y_matrix outcome matrix where each column is a multivariate observation
+#' @param cov_mat latent GP covariance matrix
+#' @param inv_cov_mat latent GP precision matrix
+#' @param mean_mat linear predictors ommitting latent GP
 #' @param nsim scalar, number of importance samples
 #' @return vector
 #' @export
 #' @examples
-#' get_pmll_estim(data_object, nsim = 20)
+#' get_pmll_estim(y_mat, cov_mat, inv_cov_mat, mean_mat, nsim = 20)
 
-get_pmll_estim <- function(get_data_mat_obj, nsim = 500) {
-
-  ## Get relevant matrices
-  y_mat <- get_data_mat_obj$y_matrix
-  cov_mat <- get_data_mat_obj$cov_matrix
-  inv_cov_mat<- qr.solve(cov_mat)
-  mean_mat <- get_data_mat_obj$mean_matrix
-  log_fact_vec <- get_data_mat_obj$log_fact_vec
+get_pmll_estim <- function(y_matrix, cov_mat, inv_cov_mat, mean_mat, nsim) {
 
   ## Get posterior modes
-  post_params <- get_posterior_modes(y_mat, inv_cov_mat, mean_mat)
+  post_params <- get_posterior_modes(y_matrix, inv_cov_mat, mean_mat)
 
-  ## Qualifies for
-  length_gp <- nrow(y_mat)
-  num_obs <- ncol(y_mat)
+  ## Qualifiers
+  length_gp <- nrow(y_matrix)
+  num_obs <- ncol(y_matrix)
   zero_vec <- rep(0, length_gp)
 
   ## Loop over each patient
@@ -30,7 +26,7 @@ get_pmll_estim <- function(get_data_mat_obj, nsim = 500) {
     post_f <- post_params$post_modes[, x]
     post_prec <- post_params$post_prec[, , x]
     post_chol <- post_params$post_prec_chol[, , x]
-    y_vals <- y_mat[, x]
+    y_vals <- y_matrix[, x]
     mean_vals <- mean_mat[, x]
     post_f_det <- prod(diag(post_chol))
 

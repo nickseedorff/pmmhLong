@@ -2,10 +2,12 @@
 
 export(calc_gradient)
 export(calc_hessian)
+export(evaluate_pmmh)
 export(gen_data)
-export(gen_data_mat)
+export(gen_data_mats)
 export(get_pmll_estim)
 export(get_post_estim)
 export(get_posterior_modes)
 export(pmmh)
+export(prepare_data)
 export(single_step)

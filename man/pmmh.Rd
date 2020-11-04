@@ -4,14 +4,36 @@
 \alias{pmmh}
 \title{Get values for MH accept step}
 \usage{
-pmmh(gen_data_obj, ndraws = 300, nsim = 25)
+pmmh(
+  data,
+  distance_mat,
+  outcome = "y",
+  subject_index = "patient",
+  time_index = "time",
+  position_index = "position",
+  ndraws = 200,
+  nsim = 10,
+  offset_term = NULL
+)
 }
 \arguments{
-\item{gen_data_obj}{list of objects}
+\item{data}{data.frame or matrix with described column names}
+
+\item{distance_mat}{matrix, distance between multivariate outcomes}
+
+\item{outcome}{char, name of the outcome variable}
+
+\item{subject_index}{char, name of the column denoting subjects}
+
+\item{time_index}{char, name of the column denoting time}
+
+\item{position_index}{char, name of the column denoting position}
 
 \item{ndraws}{number of draws}
 
 \item{nsim}{number of importance samples}
+
+\item{offset_term}{char, name of column that is used as an offset}
 }
 \value{
 list

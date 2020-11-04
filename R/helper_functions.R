@@ -1,6 +1,6 @@
 #' Build data matrices for ingestion by gen_pmll_estim()
 #'
-#' @param data_obj list of objects to make relevant data matrices
+#' @param distance_mat list of objects to make relevant data matrices
 #' @param sigma scalar
 #' @param phi scalar
 #' @param mean_vec vector, linear predictor without the GP
@@ -8,14 +8,64 @@
 #' @return list of matrices
 #' @export
 
-gen_data_mat <- function(data_obj, sigma, phi, mean_vec) {
+gen_data_mats <- function(distance_mat, sigma, phi, mean_vec) {
   length_gp <- nrow(data_obj$dist_mat)
-  y_matrix <- matrix(data_obj$Y, nrow = length_gp)
   cov_matrix <- sigma * exp(-data_obj$dist_mat ^ 2/ phi)
-  mean_matrix <- matrix(mean_vec, nrow = length_gp, ncol = ncol(y_matrix))
-  log_fact_vec <- apply(y_matrix, 2, function(x) sum(lfactorial(x)))
-  list(y_matrix = y_matrix, cov_matrix = cov_matrix, mean_matrix = mean_matrix,
-       log_fact_vec = log_fact_vec)
+  mean_matrix <- matrix(mean_vec, nrow = length_gp)
+  list(cov_matrix = cov_matrix, mean_matrix = mean_matrix)
+}
+
+#' Prepare data for loop within pmmh
+#'
+#' @param data list of objects to make relevant data matrices
+#' @param distance_mat matrix, distance between multivariate outcomes
+#' @param length_gp scalar, length of the multivariate outcomes
+#' @param num_subjects scalar, number of subjects
+#'
+#' @return list of matrices
+#' @export
+
+prepare_data <- function(data, distance_mat, length_gp, num_subjects,
+                         outcome, subject_index, time_index,
+                         position_index, offset_term) {
+  ## Reformatting of inputs
+  data$subject_index <- data[, subject_index]
+  data$time_index <- data[, time_index]
+  data$position_index <- data[, position_index]
+
+  ## Need outcome as a matrix, each column is a multivariate observation
+  y_matrix <- matrix(data[, outcome], nrow = length_gp)
+  y_subj_index <- matrix(data$subject_index, nrow = length_gp)[1, ]
+
+  ## Remove unneccesary variables, include offset
+  vars_to_rm <- c(outcome, subject_index, time_index, position_index)
+  non_covariates <- c("outcome", "subject_index", "position_index",
+                      "offset_term", "time_index")
+  if (!is.null(offset_term)) {
+    data$offset_term <- data[, offset_term]
+    identifiers <- data[, setdiff(colnames(data), c(input_vars, vars_to_rm))]
+  } else {
+    identifiers <- data[, setdiff(colnames(data), vars_to_rm)]
+  }
+
+  data_covar <- identifiers[, setdiff(colnames(identifiers), non_covariates)]
+
+  ## Store draws from posterior
+  param_names <- c(rep(c("alpha", "beta"), each = num_subjects),
+                   c("sigma", "phi", "alpha_h", "beta_h", colnames(data_covar)))
+
+  ## Data components to pass to get_post_estim
+  unique_param <- unique(param_names)
+  location_list <- vector("list", length = length(unique_param))
+  location_list <- setNames(location_list, unique_param)
+  for(i in 1:length(unique_param)) {
+    location_list[[i]] <- which(param_names == unique_param[i])
+  }
+
+  list(y_matrix = y_matrix, identifiers = identifiers,
+       y_subj_index = y_subj_index, data_covar = data_covar,
+       length_gp = length_gp, distance_mat = distance_mat,
+       location_list = location_list, param_names = param_names)
 }
 
 #' Build a dataset for easy testing
@@ -25,7 +75,7 @@ gen_data_mat <- function(data_obj, sigma, phi, mean_vec) {
 #' @param phi scalar
 #' @param mean_vec vector, linear predictor without the GP
 #'
-#' @return list of matrices
+#' @return list with data matrix vector or true values
 #' @export
 
 gen_data <- function(sigma, phi, patients, time_points_per_patient,
@@ -33,7 +83,8 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
   total_obs <- time_points_per_patient * length_gp * patients
   pat_time_combo <- time_points_per_patient * patients
   patient_index <- rep(1:patients, each = time_points_per_patient * length_gp)
-  pat_full_index <- rep(1:patients, each = time_points_per_patient)
+  patient_time_index <- rep(1:pat_time_combo, each = length_gp)
+  position <- rep(1:length_gp, pat_time_combo)
 
   ## Alpha should be same for all simulations
   set.seed(29)
@@ -44,7 +95,8 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
   beta_vec <- beta_vals[patient_index]
 
   set.seed(seed)
-  time_vec <- rnorm(total_obs)
+  time_vec <- rnorm(pat_time_combo)[patient_time_index]
+
   ## Distance and covariance matrices
   dist_mat <- as.matrix(dist(0:(length_gp - 1), upper = T, diag = T))
   cov_mat <- sigma * exp(- dist_mat ^ 2/ phi)
@@ -56,13 +108,44 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
   gp_truth <- as.vector(gauss_process)
 
   ## Linear prediction and generate data
+  #linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth
   linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth
-  Y <- rpois(total_obs, exp(linear_pred))
-  list(Y = Y, dist_mat = dist_mat, gp_truth = gp_truth, time_vec = time_vec,
-       alpha_vals = alpha_vals,
-       all_true_values = c(alpha_vals, beta_vals, sigma, phi, alpha_hier, beta_hier),
-       patients = patients,
-       patient_index = patient_index,
-       pat_full_index = pat_full_index,
-       time_points_per_patient = time_points_per_patient)
+  y <- rpois(total_obs, exp(linear_pred))
+  data <- data.frame(y = y, time = time_vec, position = position,
+                     patient = patient_index)
+  list(all_dat = data,
+       all_true_values = c(alpha_vals, beta_vals, sigma, phi, alpha_hier,
+                           beta_hier),
+       distance_matrix = dist_mat)
+}
+
+#' Build a dataset for easy testing
+#'
+#' @param pmmh_res list of results from the pmmh_function
+#' @param data scalar
+#' @param burn_in scalar, number of draws to discard
+#' @param mean_vec vector, linear predictor without the GP
+#'
+#' @return list with data matrix vector or true values
+#' @export
+
+evaluate_pmmh <- function(pmmh_res, gen_data_obj, burn_in = 51) {
+  tot_draws <- nrow(pmmh_res$all_draws)
+  start <- burn_in + 1
+  draws <- pmmh_res$all_draws[start:tot_draws, ]
+  accepts <- colMeans(pmmh_res$all_accept[start:tot_draws, ])
+  summ_stat <- t(apply(draws, 2, function(x) {
+    c(mean(x),
+      as.numeric(quantile(x, probs = 0.025)),
+      as.numeric(quantile(x, probs = 0.975)),
+      sd(x))
+    }))
+
+  colnames(summ_stat) <- c("mean", "low_ci", "up_ci", "sd")
+  df <- round(data.frame(truth = gen_data_obj$all_true_values,
+                         summ_stat, acc_rat = accepts), 3)
+  df$In_CI <- as.numeric(df$truth >= df$low_ci &
+                           df$truth <= df$up_ci)
+  df$sq_diff <- (df$truth - df$mean) ^ 2
+  df
 }

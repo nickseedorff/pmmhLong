@@ -4,15 +4,7 @@
 \alias{get_post_estim}
 \title{Get values for MH accept step}
 \usage{
-get_post_estim(
-  data,
-  param_vec,
-  param_name,
-  pat_index,
-  patients,
-  nsim,
-  pmll_vec = NULL
-)
+get_post_estim(data, param_vec, param_name, subj_index, nsim, pmll_vec = NULL)
 }
 \arguments{
 \item{data}{list of objects}
@@ -21,9 +13,7 @@ get_post_estim(
 
 \item{param_name}{char, name of parameter proposed}
 
-\item{pat_index}{scalar, index of patient}
-
-\item{patients}{scalar, number of patients}
+\item{subj_index}{scalar, index of subject}
 
 \item{nsim}{scalar, number of importance samples}
 

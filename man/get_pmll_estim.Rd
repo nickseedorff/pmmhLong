@@ -4,12 +4,18 @@
 \alias{get_pmll_estim}
 \title{Get estimates of the marginal likelihood values}
 \usage{
-get_pmll_estim(get_data_mat_obj, nsim = 500)
+get_pmll_estim(y_matrix, cov_mat, inv_cov_mat, mean_mat, nsim)
 }
 \arguments{
-\item{nsim}{scalar, number of importance samples}
+\item{y_matrix}{outcome matrix where each column is a multivariate observation}
 
-\item{gen_data_mat_obj}{object with list of relevant matrices}
+\item{cov_mat}{latent GP covariance matrix}
+
+\item{inv_cov_mat}{latent GP precision matrix}
+
+\item{mean_mat}{linear predictors ommitting latent GP}
+
+\item{nsim}{scalar, number of importance samples}
 }
 \value{
 vector
@@ -18,5 +24,5 @@ vector
 Get estimates of the marginal likelihood values
 }
 \examples{
-get_pmll_estim(data_object, nsim = 20)
+get_pmll_estim(y_mat, cov_mat, inv_cov_mat, mean_mat, nsim = 20)
 }
