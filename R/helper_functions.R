@@ -43,7 +43,7 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
                       "offset_term", "time_index")
   if (!is.null(offset_term)) {
     data$offset_term <- data[, offset_term]
-    identifiers <- data[, setdiff(colnames(data), c(input_vars, vars_to_rm))]
+    identifiers <- data[, setdiff(colnames(data), c(offset_term, vars_to_rm))]
   } else {
     identifiers <- data[, setdiff(colnames(data), vars_to_rm)]
   }
@@ -79,7 +79,8 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
 #' @export
 
 gen_data <- function(sigma, phi, patients, time_points_per_patient,
-                     length_gp = 10, seed = 28, alpha_hier, beta_hier) {
+                     length_gp = 10, seed = 28, alpha_hier, beta_hier,
+                     offset_vec = NULL) {
   total_obs <- time_points_per_patient * length_gp * patients
   pat_time_combo <- time_points_per_patient * patients
   patient_index <- rep(1:patients, each = time_points_per_patient * length_gp)
@@ -109,10 +110,24 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
 
   ## Linear prediction and generate data
   #linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth
-  linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth
+  if (is.null(offset_vec)) {
+    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth
+  } else if (length(offset_vec) == length_gp) {
+    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth + offset_vec
+  } else {
+    stop("Length of offset vector must == length_gp")
+  }
   y <- rpois(total_obs, exp(linear_pred))
-  data <- data.frame(y = y, time = time_vec, position = position,
-                     patient = patient_index)
+
+  if (is.null(offset_vec)) {
+    data <- data.frame(y = y, time = time_vec, position = position,
+                       patient = patient_index)
+  } else {
+    data <- data.frame(y = y, time = time_vec, position = position,
+                       patient = patient_index, offset_vals = offset_vec)
+  }
+
+
   list(all_dat = data,
        all_true_values = c(alpha_vals, beta_vals, sigma, phi, alpha_hier,
                            beta_hier),

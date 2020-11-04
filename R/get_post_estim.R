@@ -23,6 +23,7 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
 
   ## Commonly used vectors
   subject_index <- data$identifiers$subject_index
+  offset_vector <- data$identifiers$offset_term
 
   if(param_name %in% c("alpha_h", "beta_h")){
     pmll_est <- pmll_vec
@@ -35,7 +36,14 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
     ## Build mean vector and matrix
     alpha_vec <- alpha[subject_index]
     beta_vec <- beta[subject_index]
-    mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index
+
+    ## Add offset if specified
+    if (is.null(offset_vector)) {
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index
+    } else {
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
+        offset_vector
+    }
     mean_mat <- matrix(mean_vec, nrow = data$length_gp)
 
     ## Get estimates of the pmll
@@ -45,7 +53,7 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
         warning("Error in loop")
         "err"
         })
-  } else if(param_name %in% c("alpha", "beta")) {
+  } else if (param_name %in% c("alpha", "beta")) {
 
     ## Covariance and precision matrices
     cov_mat <- sigma * exp(-data$distance_mat ^ 2/ phi)
@@ -55,7 +63,14 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
     pat_rows <- which(subject_index == subj_index)
     alpha_vec <- alpha[subject_index[pat_rows]]
     beta_vec <- beta[subject_index[pat_rows]]
-    mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows]
+
+    ## Add offset if specified
+    if (is.null(offset_vector)) {
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows]
+    } else {
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows] +
+        offset_vector[pat_rows]
+    }
     mean_mat <- matrix(mean_vec, nrow = data$length_gp)
 
     ## Get estimates of the pmll for only individuals where it will change

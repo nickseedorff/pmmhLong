@@ -12,7 +12,8 @@ gen_data(
   length_gp = 10,
   seed = 28,
   alpha_hier,
-  beta_hier
+  beta_hier,
+  offset_vec = NULL
 )
 }
 \arguments{
