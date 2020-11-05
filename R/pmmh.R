@@ -88,10 +88,6 @@ pmmh <- function(data, distance_mat,
   }
 
   ## Create matrix with all draws
-  param_names <- c(paste0("alpha", 1:num_subjects),
-                   paste0("beta", 1:num_subjects),
-                   "sigma", "phi", "alpha_h")
-
   list(param_names = param_names,
        all_draws = param_values,
        all_accept = accept_values,
