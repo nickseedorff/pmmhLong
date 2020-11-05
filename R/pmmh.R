@@ -84,7 +84,7 @@ pmmh <- function(data, distance_mat,
     param_values[i, ] <- old_vec
     accept_values[i, ] <- accept_vec
 
-    if(i %% 25 == 0) print(i)
+    #if(i %% 25 == 0) print(i)
   }
 
   ## Create matrix with all draws
