@@ -107,8 +107,8 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
 
   ## If using all subjects, return full vector
   if (pmll_est[1] == "err") {
-    pmll_vec <- rep(1e-6, length(data$y_subj_index))
-    post_value <- 1e-9
+    pmll_vec <- rep(-1e12, length(data$y_subj_index))
+    post_value <- -1e12
     return(list(pmll_vec = pmll_vec, post_value = post_value))
   } else if (subj_index == 0) {
     pmll_vec <- pmll_est

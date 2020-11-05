@@ -59,7 +59,7 @@ pmmh <- function(data, distance_mat,
 
       ## Get values for MH, omit of non-valid proposal
       if(param_names[j] %in% c("sigma", "phi") & prop_vec[j] <= 0) {
-        ll_diff <- -100000000
+        ll_diff <- -1e12
       } else {
         #if(!param_names[j] %in% c("sigma", "phi", "alpha", "alpha_h")) prop_vec[j] <- 0
         ll_prop_obj <- get_post_estim(data = data_list,
