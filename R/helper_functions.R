@@ -81,21 +81,19 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
 gen_data <- function(sigma, phi, patients, time_points_per_patient,
                      length_gp = 10, seed = 28, alpha_hier, beta_hier,
                      offset_vec = NULL, num_add_covar = NULL) {
+
+  set.seed(seed)
   total_obs <- time_points_per_patient * length_gp * patients
   pat_time_combo <- time_points_per_patient * patients
   patient_index <- rep(1:patients, each = time_points_per_patient * length_gp)
   patient_time_index <- rep(1:pat_time_combo, each = length_gp)
   position <- rep(1:length_gp, pat_time_combo)
 
-  ## Alpha should be same for all simulations
-  set.seed(29)
+  ## Draw patient specific slopes and intercepts and time vector
   alpha_vals <- rnorm(patients, alpha_hier, sd = 0.5)
   alpha_vec <- alpha_vals[patient_index]
-
   beta_vals <- rnorm(patients, beta_hier, sd = 0.25)
   beta_vec <- beta_vals[patient_index]
-
-  set.seed(seed)
   time_vec <- rnorm(pat_time_combo)[patient_time_index]
 
   if (!is.null(num_add_covar)) {
