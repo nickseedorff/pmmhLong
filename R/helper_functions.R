@@ -48,11 +48,11 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
     identifiers <- data[, setdiff(colnames(data), vars_to_rm)]
   }
 
-  data_covar <- identifiers[, setdiff(colnames(identifiers), non_covariates)]
+  add_x_var <- identifiers[, setdiff(colnames(identifiers), non_covariates)]
 
   ## Store draws from posterior
   param_names <- c(rep(c("alpha", "beta"), each = num_subjects),
-                   c("sigma", "phi", "alpha_h", "beta_h", colnames(data_covar)))
+                   c("sigma", "phi", "alpha_h", "beta_h", colnames(add_x_var)))
 
   ## Data components to pass to get_post_estim
   unique_param <- unique(param_names)
@@ -63,7 +63,7 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
   }
 
   list(y_matrix = y_matrix, identifiers = identifiers,
-       y_subj_index = y_subj_index, data_covar = data_covar,
+       y_subj_index = y_subj_index, add_x_var = add_x_var,
        length_gp = length_gp, distance_mat = distance_mat,
        location_list = location_list, param_names = param_names)
 }
@@ -80,7 +80,7 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
 
 gen_data <- function(sigma, phi, patients, time_points_per_patient,
                      length_gp = 10, seed = 28, alpha_hier, beta_hier,
-                     offset_vec = NULL) {
+                     offset_vec = NULL, num_add_covar = NULL) {
   total_obs <- time_points_per_patient * length_gp * patients
   pat_time_combo <- time_points_per_patient * patients
   patient_index <- rep(1:patients, each = time_points_per_patient * length_gp)
@@ -98,6 +98,14 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
   set.seed(seed)
   time_vec <- rnorm(pat_time_combo)[patient_time_index]
 
+  if (!is.null(num_add_covar)) {
+    x_mat <- matrix(rnorm(pat_time_combo * num_add_covar),
+                        ncol = num_add_covar)
+    x_mat <- x_mat[patient_time_index, ]
+    x_beta <- rnorm(num_add_covar)
+    colnames(x_mat) <- paste0("add_cov", 1:num_add_covar)
+  }
+
   ## Distance and covariance matrices
   dist_mat <- as.matrix(dist(0:(length_gp - 1), upper = T, diag = T))
   cov_mat <- sigma * exp(- dist_mat ^ 2/ phi)
@@ -107,30 +115,41 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
                                    mu = rep(0, length_gp),
                                    Sigma = cov_mat))
   gp_truth <- as.vector(gauss_process)
+  all_true_values <- c(alpha_vals, beta_vals, sigma, phi, alpha_hier, beta_hier)
+
 
   ## Linear prediction and generate data
-  #linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth
-  if (is.null(offset_vec)) {
+  if (is.null(offset_vec) & is.null(num_add_covar)) {
     linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth
-  } else if (length(offset_vec) == length_gp) {
-    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth + offset_vec
-  } else {
-    stop("Length of offset vector must == length_gp")
-  }
-  y <- rpois(total_obs, exp(linear_pred))
-
-  if (is.null(offset_vec)) {
+    y <- rpois(total_obs, exp(linear_pred))
     data <- data.frame(y = y, time = time_vec, position = position,
                        patient = patient_index)
-  } else {
+  } else if (is.null(offset_vec) & !is.null(num_add_covar)) {
+    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth +
+      x_mat %*% x_beta
+    y <- rpois(total_obs, exp(linear_pred))
+    data <- data.frame(y = y, time = time_vec, position = position,
+                       patient = patient_index, x_mat = x_mat)
+    all_true_values <- c(all_true_values, x_beta)
+
+  } else if (!is.null(offset_vec) & is.null(num_add_covar)){
+    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth + offset_vec
+    y <- rpois(total_obs, exp(linear_pred))
     data <- data.frame(y = y, time = time_vec, position = position,
                        patient = patient_index, offset_vals = offset_vec)
+
+  } else if (!is.null(offset_vec) & !is.null(num_add_covar)){
+    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth + offset_vec +
+      x_mat %*% x_beta
+    y <- rpois(total_obs, exp(linear_pred))
+    data <- data.frame(y = y, time = time_vec, position = position,
+                       patient = patient_index, x_mat = x_mat,
+                       offset_vals = offset_vec)
+    all_true_values <- c(all_true_values, x_beta)
   }
 
-
   list(all_dat = data,
-       all_true_values = c(alpha_vals, beta_vals, sigma, phi, alpha_hier,
-                           beta_hier),
+       all_true_values = all_true_values,
        distance_matrix = dist_mat)
 }
 

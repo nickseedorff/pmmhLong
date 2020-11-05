@@ -31,6 +31,10 @@ pmmh <- function(data, distance_mat,
   num_param_index[1:(2 * num_subjects)] <- rep(1:num_subjects, 2)
   accept_values <- param_values <- matrix(NA, nrow = ndraws, ncol = num_param)
 
+  ## Variance for metroplis hastings proposals
+  mh_prop_var <- rep(0.5, num_param)
+  mh_prop_var[param_names %in% c("sigma", "phi")] <- 0.25
+
   for(i in 2:ndraws){
     if(i == 2) {
       start_time <- Sys.time()
@@ -47,8 +51,7 @@ pmmh <- function(data, distance_mat,
 
     ## Propose new values
     old_vec <- param_values[i - 1, ]
-    candidate_vec <- rnorm(num_param, old_vec,
-                           c(rep(0.5, 2 * num_subjects), 0.1, 0.5, 2, 0.5))
+    candidate_vec <- rnorm(num_param, old_vec, mh_prop_var)
     accept_vec <- rep(0, num_param)
     for(j in 1:ncol(param_values)) {
       prop_vec <- old_vec

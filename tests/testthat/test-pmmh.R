@@ -10,8 +10,8 @@ test_that("pmmh() results match our expectations", {
   set.seed(10)
   res <- pmmh(dat$all_dat, dat$distance_matrix, nsim = 3, ndraws = 100)
   res_df <- evaluate_pmmh(res, dat, burn_in = 51)
-  expect_equal(sum(res_df$In_CI), 8)
-  expect_equal(sum(res_df$acc_rat), 7.001)
+  expect_equal(sum(res_df$In_CI), 7)
+  expect_equal(sum(res_df$acc_rat), 8.061)
 
 # Test the addition of a offset term --------------------------------------
 
@@ -24,6 +24,19 @@ test_that("pmmh() results match our expectations", {
   res <- pmmh(dat$all_dat, dat$distance_matrix, nsim = 10, ndraws = 100,
               offset_term = "offset_vals")
   res_df <- evaluate_pmmh(res, dat, burn_in = 51)
-  expect_equal(round(max(res_df$sq_diff), 2), 1.14)
-  expect_equal(sum(res_df$In_CI), 9)
+  expect_equal(round(max(res_df$sq_diff), 2), 0.52)
+  expect_equal(sum(res_df$In_CI), 12)
+
+  # Test the addition of covariates --------------------------------------
+
+  dat <- gen_data(sigma = 0.5, phi = 2, seed = 14, length_gp = 10,
+                  patients = 4, time_points_per_patient = 3,
+                  alpha_hier = 0.4, beta_hier = 0.1,
+                  num_add_covar = 2)
+
+  set.seed(10)
+  res <- pmmh(dat$all_dat, dat$distance_matrix, nsim = 10, ndraws = 100)
+  res_df <- evaluate_pmmh(res, dat, burn_in = 51)
+  expect_equal(round(sum(res_df$acc_rat), 2), 7.78)
+  expect_equal(sum(res_df$In_CI), 8)
 })

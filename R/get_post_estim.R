@@ -14,20 +14,29 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
                            pmll_vec = NULL) {
 
   ## Parameters to build mean vector
-  alpha <- param_vec[data$location_list$alpha]
-  beta <- param_vec[data$location_list$beta]
-  sigma <- param_vec[data$location_list$sigma]
-  phi <- param_vec[data$location_list$phi]
-  alpha_hier <- param_vec[data$location_list$alpha_h]
-  beta_hier <- param_vec[data$location_list$beta_h]
+  locs <- data$location_list
+  alpha <- param_vec[locs$alpha]
+  beta <- param_vec[locs$beta]
+  sigma <- param_vec[locs$sigma]
+  phi <- param_vec[locs$phi]
+  alpha_hier <- param_vec[locs$alpha_h]
+  beta_hier <- param_vec[locs$beta_h]
 
   ## Commonly used vectors
   subject_index <- data$identifiers$subject_index
   offset_vector <- data$identifiers$offset_term
+  add_x_var <- data$add_x_var
+  ncol_x_var <- ncol(add_x_var)
+  x_var_names <- colnames(add_x_var)
+  add_x_var <- as.matrix(add_x_var)
+  if (ncol_x_var > 0) {
+    x_beta <-param_vec[(locs$beta_h + 1):length(param_vec)]
+  }
+
 
   if(param_name %in% c("alpha_h", "beta_h")){
     pmll_est <- pmll_vec
-  } else if(param_name %in% c("sigma", "phi", "all")) {
+  } else if(param_name %in% c("sigma", "phi", "all", x_var_names)) {
 
     ## Covariance and precision matrices
     cov_mat <- sigma * exp(-data$distance_mat ^ 2/ phi)
@@ -38,11 +47,17 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
     beta_vec <- beta[subject_index]
 
     ## Add offset if specified
-    if (is.null(offset_vector)) {
+    if (is.null(offset_vector) & ncol_x_var == 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index
-    } else {
+    } else if (!is.null(offset_vector) & ncol_x_var == 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
         offset_vector
+    } else if (is.null(offset_vector) & ncol_x_var > 0) {
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
+        add_x_var %*% x_beta
+    } else if (!is.null(offset_vector) & ncol_x_var > 0) {
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
+        offset_vector + add_x_var %*% x_beta
     }
     mean_mat <- matrix(mean_vec, nrow = data$length_gp)
 
@@ -65,12 +80,19 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
     beta_vec <- beta[subject_index[pat_rows]]
 
     ## Add offset if specified
-    if (is.null(offset_vector)) {
+    if (is.null(offset_vector) & ncol_x_var == 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows]
-    } else {
+    } else if (!is.null(offset_vector) & ncol_x_var == 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows] +
         offset_vector[pat_rows]
+    } else if (is.null(offset_vector) & ncol_x_var > 0) {
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows] +
+        add_x_var[pat_rows, ] %*% x_beta
+    } else if (!is.null(offset_vector) & ncol_x_var > 0) {
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
+        offset_vector[pat_rows] + add_x_var[pat_rows, ] %*% x_beta
     }
+
     mean_mat <- matrix(mean_vec, nrow = data$length_gp)
 
     ## Get estimates of the pmll for only individuals where it will change

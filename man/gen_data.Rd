@@ -13,7 +13,8 @@ gen_data(
   seed = 28,
   alpha_hier,
   beta_hier,
-  offset_vec = NULL
+  offset_vec = NULL,
+  num_add_covar = NULL
 )
 }
 \arguments{
