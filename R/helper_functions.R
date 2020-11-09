@@ -97,8 +97,8 @@ prepare_storage <- function(data, ndraws, num_subjects, nsim, burn_in,
   colnames(accept_values) <- colnames(param_values) <- param_names_num
 
   ## Variance for metroplis hastings proposals
-  mh_prop_sd <- rep(0.75, num_param)
-  mh_prop_sd[param_names %in% c("sigma", "phi")] <- 0.35
+  mh_prop_sd <- rep(0.5, num_param)
+  mh_prop_sd[param_names %in% c("sigma", "phi")] <- 0.25
 
   ## Objects to pass to a single chain
  list(data_list = data, ndraws = ndraws, nsim = nsim, param_names = param_names,
