@@ -15,7 +15,12 @@
 pmmh <- function(data, distance_mat,
                  outcome = "y", subject_index = "patient",
                  time_index = "time", position_index = "position",
-                 ndraws = 200, nsim = 10, offset_term = NULL) {
+                 ndraws = 200, burn_in = 51, nsim = 10, offset_term = NULL,
+                 chains = 1, keep_burn_in = FALSE) {
+
+  if (burn_in >= ndraws) {
+    stop("burn_in must be smaller than ndraws")
+  }
 
   ## Scalars needed later and prepare list of relevant objects
   length_gp <- nrow(distance_mat)
@@ -23,73 +28,38 @@ pmmh <- function(data, distance_mat,
   data_list <- prepare_data(data, distance_mat, length_gp, num_subjects,
                             outcome, subject_index, time_index,
                             position_index, offset_term)
+  single_chain_list <- prepare_storage(data_list, ndraws, num_subjects, nsim,
+                                       burn_in, keep_burn_in)
 
-  ## Store draws from posterior
-  param_names <- data_list$param_names
-  num_param <- length(param_names)
-  num_param_index <- rep(0, num_param)
-  num_param_index[1:(2 * num_subjects)] <- rep(1:num_subjects, 2)
-  accept_values <- param_values <- matrix(NA, nrow = ndraws, ncol = num_param)
+  if (chains == 1) {
+    results_list <- pmmh_single_chain(single_chain_list)
 
-  ## Variance for metroplis hastings proposals
-  mh_prop_var <- rep(0.5, num_param)
-  mh_prop_var[param_names %in% c("sigma", "phi")] <- 0.25
+  } else if (chains > 1){
+    tmp_list <- lapply(1:chains, function(x) {
+      pmmh_single_chain(single_chain_list)
+    })
 
-  for(i in 2:ndraws){
-    if(i == 2) {
-      start_time <- Sys.time()
-      param_values[1, ] <- ifelse(param_names %in% c("sigma", "phi"), 1, 0)
-      ll_obj <- get_post_estim(data = data_list,
-                               param_vec = param_values[1, ],
-                               subj_index = 0,
-                               param_name = "all",
-                               nsim = nsim)
-
-      pmll_old <- ll_obj$pmll_vec
-      ll_old <- ll_obj$post_value
+    ## Convert to arrays with appropriate names
+    draws1 <- tmp_list[[1]]$all_draws
+    all_draws <- array(NA, dim = c(nrow(draws1), chains, ncol(draws1)),
+                       dimnames = list(iterations = NULL,
+                                       chains = paste0("chain", 1:chains),
+                                       paramters = colnames(draws1)))
+    all_accept <- all_draws
+    time_vec <- vector(length = chains)
+    for(i in 1:chains) {
+      all_draws[, i,] <- tmp_list[[i]]$all_draws
+      all_accept[, i,] <- tmp_list[[i]]$all_accept
+      time_vec[i] <- paste0("Chain ", i, " runtime = ",
+                            round(as.numeric(tmp_list[[i]]$eval_time), 1),
+                            " seconds")
     }
-
-    ## Propose new values
-    old_vec <- param_values[i - 1, ]
-    candidate_vec <- rnorm(num_param, old_vec, mh_prop_var)
-    accept_vec <- rep(0, num_param)
-    for(j in 1:ncol(param_values)) {
-      prop_vec <- old_vec
-      prop_vec[j] <- candidate_vec[j]
-
-      ## Get values for MH, omit of non-valid proposal
-      if(param_names[j] %in% c("sigma", "phi") & prop_vec[j] <= 0) {
-        ll_diff <- -1e12
-      } else {
-        #if(!param_names[j] %in% c("sigma", "phi", "alpha", "alpha_h")) prop_vec[j] <- 0
-        ll_prop_obj <- get_post_estim(data = data_list,
-                                      param_vec = prop_vec,
-                                      param_name = param_names[j],
-                                      subj_index = num_param_index[j],
-                                      nsim = nsim,
-                                      pmll_vec = pmll_old)
-
-        #ll_old <- get_monte_estimate(sigma_old, phi_old)
-        ll_diff <- ll_prop_obj$post_value - ll_old
-      }
-
-      ## MH acceptance step
-      if(log(runif(1)) < ll_diff){
-        old_vec[j] <- prop_vec[j]
-        pmll_old <- ll_prop_obj$pmll_vec
-        ll_old <- ll_prop_obj$post_value
-        accept_vec[j] <- 1
-      }
-    }
-    param_values[i, ] <- old_vec
-    accept_values[i, ] <- accept_vec
-
-    #if(i %% 25 == 0) print(i)
+    results_list = list(all_draws = all_draws, all_accept = all_accept,
+                        runtime = time_vec)
   }
+  ## Add burn_in info
+  burn_info <- list(burn_in = single_chain_list$burn_in,
+                    was_burn_in_kept = single_chain_list$keep_burn_in)
 
-  ## Create matrix with all draws
-  list(param_names = param_names,
-       all_draws = param_values,
-       all_accept = accept_values,
-       eval_time = difftime(Sys.time(), start_time, units = "mins"))
+  append(results_list, burn_info)
 }

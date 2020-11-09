@@ -19,8 +19,8 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
   beta <- param_vec[locs$beta]
   sigma <- param_vec[locs$sigma]
   phi <- param_vec[locs$phi]
-  alpha_hier <- param_vec[locs$alpha_h]
-  beta_hier <- param_vec[locs$beta_h]
+  alpha_hier <- param_vec[locs$hier_alpha]
+  beta_hier <- param_vec[locs$hier_beta]
 
   ## Commonly used vectors
   subject_index <- data$identifiers$subject_index
@@ -30,11 +30,11 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
   x_var_names <- colnames(add_x_var)
   add_x_var <- as.matrix(add_x_var)
   if (ncol_x_var > 0) {
-    x_beta <-param_vec[(locs$beta_h + 1):length(param_vec)]
+    x_beta <-param_vec[(locs$hier_beta + 1):length(param_vec)]
   }
 
 
-  if(param_name %in% c("alpha_h", "beta_h")){
+  if(param_name %in% c("hier_alpha", "hier_beta")){
     pmll_est <- pmll_vec
   } else if(param_name %in% c("sigma", "phi", "all", x_var_names)) {
 

@@ -52,7 +52,8 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
 
   ## Store draws from posterior
   param_names <- c(rep(c("alpha", "beta"), each = num_subjects),
-                   c("sigma", "phi", "alpha_h", "beta_h", colnames(add_x_var)))
+                   c("sigma", "phi", "hier_alpha", "hier_beta",
+                     colnames(add_x_var)))
 
   ## Data components to pass to get_post_estim
   unique_param <- unique(param_names)
@@ -66,6 +67,45 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
        y_subj_index = y_subj_index, add_x_var = add_x_var,
        length_gp = length_gp, distance_mat = distance_mat,
        location_list = location_list, param_names = param_names)
+}
+
+#' Prepare storage for results
+#'
+#' @param data list of objects to make relevant storage
+#' @param ndraws scalar, number of mh iterations
+#' @param num_subjects scalar, number of subjects
+#' @param nsim scalar, number of importance samples
+#' @param burn_in scalar, number of draws to discard
+#' @param keep_burn_in logical, whether burn_in draws should be kept
+#'
+#' @return list for consumption by pmmh_single_chain
+#' @export
+
+prepare_storage <- function(data, ndraws, num_subjects, nsim, burn_in,
+                            keep_burn_in) {
+
+  ## Store draws from posterior
+  param_names <- data$param_names
+  num_param <- length(param_names)
+  num_param_index <- rep(0, num_param)
+  num_param_index[1:(2 * num_subjects)] <- rep(1:num_subjects, 2)
+  accept_values <- param_values <- matrix(NA, nrow = ndraws, ncol = num_param)
+
+  ## Add columns names
+  param_names_num <- ifelse(num_param_index == 0, param_names,
+                            paste0(param_names, num_param_index))
+  colnames(accept_values) <- colnames(param_values) <- param_names_num
+
+  ## Variance for metroplis hastings proposals
+  mh_prop_sd <- rep(0.75, num_param)
+  mh_prop_sd[param_names %in% c("sigma", "phi")] <- 0.35
+
+  ## Objects to pass to a single chain
+ list(data_list = data, ndraws = ndraws, nsim = nsim, param_names = param_names,
+      num_param = num_param, num_param_index = num_param_index,
+      mh_prop_sd = mh_prop_sd, accept_values = accept_values,
+      param_values = param_values, burn_in = burn_in,
+      keep_burn_in = keep_burn_in)
 }
 
 #' Build a dataset for easy testing
