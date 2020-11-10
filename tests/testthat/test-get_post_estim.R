@@ -25,6 +25,6 @@ test_that("get_post_estim() runs as anticipated", {
                                 pmll_vec = res$pmll_vec)
 
   ## Value was calcuated through previous testing
-  expect_equal(round(res$post_value, 3), -1998.908)
+  expect_equal(round(res$post_value, 3), -2029.323)
   #expect_equal(round(res_partial$post_value, 3), -1860.417)
 })

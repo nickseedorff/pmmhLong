@@ -29,8 +29,8 @@ test_that("pmmh_single_chain() results match our expectations", {
   set.seed(10)
   res <- pmmh_single_chain(single_chain_list)
   res_df <- evaluate_pmmh(res, dat, burn_in = burn_in)
-  expect_equal(sum(res_df$In_CI), 11)
-  expect_equal(sum(res_df$acc_rat), 7.777)
+  expect_equal(sum(res_df$In_CI), 13)
+  expect_equal(sum(res_df$acc_rat), 13.102)
 
 # Test the addition of a offset term --------------------------------------
   nsim = 10
@@ -53,11 +53,10 @@ test_that("pmmh_single_chain() results match our expectations", {
   set.seed(10)
   res <- pmmh_single_chain(single_chain_list)
   res_df <- evaluate_pmmh(res, dat, burn_in = burn_in)
-  expect_equal(round(max(res_df$sq_diff), 2), 1.16)
-  expect_equal(sum(res_df$In_CI), 10)
+  expect_equal(round(max(res_df$sq_diff), 2), 1.7)
+  expect_equal(sum(res_df$In_CI), 6)
 
   # Test the addition of covariates --------------------------------------
-  nsim = 10
   offset_term = NULL
   dat <- gen_data(sigma = 0.5, phi = 2, seed = 14, length_gp = 10,
                   patients = 4, time_points_per_patient = 3,
@@ -76,6 +75,6 @@ test_that("pmmh_single_chain() results match our expectations", {
   set.seed(10)
   res <- pmmh_single_chain(single_chain_list)
   res_df <- evaluate_pmmh(res, dat, burn_in = burn_in)
-  expect_equal(round(sum(res_df$acc_rat), 2), 8.92)
+  expect_equal(round(sum(res_df$acc_rat), 2), 12.29)
   expect_equal(sum(res_df$In_CI), 11)
 })
