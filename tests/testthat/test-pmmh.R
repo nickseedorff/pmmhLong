@@ -9,6 +9,6 @@ test_that("pmmh() works as expected", {
   res <- pmmh(dat$all_dat, dat$distance_mat, ndraws = 100, nsim = 3,
               keep_burn_in = TRUE)
   res_df <- evaluate_pmmh(res, dat, burn_in = 51)
-  expect_equal(sum(res_df$In_CI), 13)
-  expect_equal(sum(res_df$acc_rat), 13.102)
+  expect_equal(sum(res_df$In_CI), 16)
+  expect_equal(sum(res_df$acc_rat), 15.509)
 })
