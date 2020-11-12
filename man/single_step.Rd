@@ -4,7 +4,7 @@
 \alias{single_step}
 \title{Take a single step in the newton raphson algorithm}
 \usage{
-single_step(y, f_cur, inv_cov, mu)
+single_step(y, f_cur, inv_cov, mu, step_halve = FALSE)
 }
 \arguments{
 \item{y}{vector, count for a specific user and time}
@@ -14,6 +14,8 @@ single_step(y, f_cur, inv_cov, mu)
 \item{inv_cov}{matrix, prior for GP precision matrix}
 
 \item{mu}{vector, linear predictor without the GP}
+
+\item{step_halve}{logical, step halving}
 }
 \value{
 vector

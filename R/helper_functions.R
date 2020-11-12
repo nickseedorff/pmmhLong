@@ -100,7 +100,7 @@ prepare_storage <- function(data, ndraws, num_subjects, nsim, burn_in,
 
   ## Variance for metroplis hastings proposals
   mh_prop_sd <- rep(0.5, num_param)
-  mh_prop_sd[param_names %in% c("sigma", "phi")] <- 0.25
+  mh_prop_sd[param_names %in% c("sigma", "phi")] <- 0.5
 
   ## Objects to pass to a single chain
  list(data_list = data, ndraws = ndraws, nsim = nsim, param_names = param_names,
@@ -137,7 +137,8 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
   alpha_loc <- rnorm(length_gp, rep(0, length_gp), sd = 0.25)
   beta_vals <- rnorm(patients, beta_hier, sd = 0.15)
   beta_vec <- beta_vals[patient_index]
-  time_vec <- rnorm(pat_time_combo, 0, 0.25)[patient_time_index]
+  time_vec <- rep(rep(0:(time_points_per_patient - 1), each = length_gp),
+                  patients)
 
   if (!is.null(num_add_covar)) {
     x_mat <- matrix(rnorm(pat_time_combo * num_add_covar),
@@ -193,7 +194,8 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
 
   list(all_dat = data,
        all_true_values = all_true_values,
-       distance_matrix = dist_mat)
+       distance_matrix = dist_mat,
+       linear_pred = linear_pred)
 }
 
 #' Build a dataset for easy testing
