@@ -37,7 +37,6 @@ calc_hessian <- function(f_cur, inv_cov, mu) {
 #' @param f_cur vector, current estimate of the mode of the latent GP
 #' @param inv_cov matrix, prior for GP precision matrix
 #' @param mu vector, linear predictor without the GP
-#' @param step_halve logical, step halving
 #'
 #' @return vector
 #' @export
@@ -45,15 +44,10 @@ calc_hessian <- function(f_cur, inv_cov, mu) {
 #' inv_cov <- qr.solve(matrix(c(3, 1, 1, 3), ncol = 2))
 #' single_step(c(1, 2), c(2, 3), inv_cov, c(-5, -4))
 
-single_step <- function(y, f_cur, inv_cov, mu, step_halve = FALSE) {
+single_step <- function(y, f_cur, inv_cov, mu) {
   grad <- calc_gradient(y, f_cur, inv_cov, mu)
   inv_hess <- qr.solve(calc_hessian(f_cur, inv_cov, mu))
-
-  if (step_halve) {
-    as.vector(f_cur - inv_hess %*% grad / 2)
-  } else {
-    as.vector(f_cur - inv_hess %*% grad)
-  }
+  as.vector(f_cur - inv_hess %*% grad)
 }
 
 #' Get posterior modes using laplace approximation
@@ -95,17 +89,7 @@ get_posterior_modes <- function(y_mat, inv_cov_mat, mean_mat) {
     while (i <= 50 & grad_norm > 1e-12){
       ## Store prior guess for comparison and update
       fold <- fnew
-      fnew <- single_step(y_vals, fold, inv_cov_mat, mean_vals)
-
-      lin_pred_old <- mean_vals + fold
-      lin_pred_new <- mean_vals + fnew
-
-      like_old <- sum(dpois(y_vals, exp(lin_pred_old), log = T)) - crossprod(lin_pred_old, inv_cov_mat) %*% lin_pred_old / 2
-      like_new <- sum(dpois(y_vals, exp(lin_pred_new), log = T)) - crossprod(lin_pred_new, inv_cov_mat) %*% lin_pred_new / 2
-
-      if (like_old > like_new) {
-        fnew <- single_step(y_vals, fold, inv_cov_mat, mean_vals, step_halve = T)
-      }
+      fnew <- single_step(y_vals, fnew, inv_cov_mat, mean_vals)
 
       ## Test convergence, update counter
       grad_norm <- crossprod(fold - fnew)

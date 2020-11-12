@@ -120,11 +120,10 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
   }
 
   post_value <- sum(pmll_vec) -
-    #1.01 * log(sigma) - 0.01 / sigma -
-    #1.01 * log(phi) - 0.01 / phi -
+    1.01 * log(sigma) - 0.01 / sigma -
+    1.01 * log(phi) - 0.01 / phi -
     sum((alpha - alpha_hier) ^ 2) / 2 / 3 ^ 2 -
     sum((beta - beta_hier) ^ 2) / 2 / 3 ^ 2 -
-    sum((alpha_loc) ^ 2) / 2 / 3 ^ 2 -
     alpha_hier ^ 2 / 2 / 3 ^ 2 -
     beta_hier ^ 2 / 2 / 3 ^ 2
 
