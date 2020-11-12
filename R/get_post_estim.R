@@ -19,7 +19,6 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
   beta <- param_vec[locs$beta]
   sigma <- param_vec[locs$sigma]
   phi <- param_vec[locs$phi]
-  alpha_loc <- param_vec[locs$alpha_loc]
   alpha_hier <- param_vec[locs$hier_alpha]
   beta_hier <- param_vec[locs$hier_beta]
 
@@ -50,16 +49,16 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
 
     ## Add offset if specified
     if (is.null(offset_vector) & ncol_x_var == 0) {
-      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index + alpha_loc
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index
     } else if (!is.null(offset_vector) & ncol_x_var == 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
-        offset_vector + alpha_loc
+        offset_vector
     } else if (is.null(offset_vector) & ncol_x_var > 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
-        add_x_var %*% x_beta + alpha_loc
+        add_x_var %*% x_beta
     } else if (!is.null(offset_vector) & ncol_x_var > 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
-        offset_vector + add_x_var %*% x_beta + alpha_loc
+        offset_vector + add_x_var %*% x_beta
     }
     mean_mat <- matrix(mean_vec, nrow = data$length_gp)
 
@@ -83,17 +82,16 @@ get_post_estim <- function(data, param_vec, param_name, subj_index, nsim,
 
     ## Add offset if specified
     if (is.null(offset_vector) & ncol_x_var == 0) {
-      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows] +
-        alpha_loc
+      mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows]
     } else if (!is.null(offset_vector) & ncol_x_var == 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows] +
-        offset_vector[pat_rows] + alpha_loc
+        offset_vector[pat_rows]
     } else if (is.null(offset_vector) & ncol_x_var > 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index[pat_rows] +
-        add_x_var[pat_rows, ] %*% x_beta + alpha_loc
+        add_x_var[pat_rows, ] %*% x_beta
     } else if (!is.null(offset_vector) & ncol_x_var > 0) {
       mean_vec <- alpha_vec + beta_vec * data$identifiers$time_index +
-        offset_vector[pat_rows] + add_x_var[pat_rows, ] %*% x_beta + alpha_loc
+        offset_vector[pat_rows] + add_x_var[pat_rows, ] %*% x_beta
     }
 
     mean_mat <- matrix(mean_vec, nrow = data$length_gp)

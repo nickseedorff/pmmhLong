@@ -53,7 +53,6 @@ prepare_data <- function(data, distance_mat, length_gp, num_subjects,
   ## Store draws from posterior
   param_names <- c(rep(c("alpha", "beta"), each = num_subjects),
                    c("sigma", "phi"),
-                   rep("alpha_loc", each = length_gp),
                    c("hier_alpha", "hier_beta",
                      colnames(add_x_var)))
 
@@ -134,7 +133,6 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
   ## Draw patient specific slopes and intercepts and time vector
   alpha_vals <- rnorm(patients, alpha_hier, sd = 0.25)
   alpha_vec <- alpha_vals[patient_index]
-  alpha_loc <- rnorm(length_gp, rep(0, length_gp), sd = 0.25)
   beta_vals <- rnorm(patients, beta_hier, sd = 0.15)
   beta_vec <- beta_vals[patient_index]
   time_vec <- rnorm(pat_time_combo, 0, 0.25)[patient_time_index]
@@ -156,34 +154,33 @@ gen_data <- function(sigma, phi, patients, time_points_per_patient,
                                    mu = rep(0, length_gp),
                                    Sigma = cov_mat))
   gp_truth <- as.vector(gauss_process)
-  all_true_values <- c(alpha_vals, beta_vals, sigma, phi, alpha_loc,
+  all_true_values <- c(alpha_vals, beta_vals, sigma, phi,
                        alpha_hier, beta_hier)
 
 
   ## Linear prediction and generate data
   if (is.null(offset_vec) & is.null(num_add_covar)) {
-    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth + alpha_loc
+    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth
     y <- rpois(total_obs, exp(linear_pred))
     data <- data.frame(y = y, time = time_vec, position = position,
                        patient = patient_index)
   } else if (is.null(offset_vec) & !is.null(num_add_covar)) {
     linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth +
-      x_mat %*% x_beta + alpha_loc
+      x_mat %*% x_beta
     y <- rpois(total_obs, exp(linear_pred))
     data <- data.frame(y = y, time = time_vec, position = position,
                        patient = patient_index, x_mat = x_mat)
     all_true_values <- c(all_true_values, x_beta)
 
   } else if (!is.null(offset_vec) & is.null(num_add_covar)){
-    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth + offset_vec +
-      alpha_loc
+    linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth + offset_vec
     y <- rpois(total_obs, exp(linear_pred))
     data <- data.frame(y = y, time = time_vec, position = position,
                        patient = patient_index, offset_vals = offset_vec)
 
   } else if (!is.null(offset_vec) & !is.null(num_add_covar)){
     linear_pred <- alpha_vec + beta_vec * time_vec + gp_truth + offset_vec +
-      x_mat %*% x_beta + alpha_loc
+      x_mat %*% x_beta
     y <- rpois(total_obs, exp(linear_pred))
     data <- data.frame(y = y, time = time_vec, position = position,
                        patient = patient_index, x_mat = x_mat,
